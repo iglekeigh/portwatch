@@ -1,58 +1,53 @@
 package config
 
 import (
-	"encoding/json"
 	"os"
 	"time"
+
+	"gopkg.in/yaml.v3"
 )
 
-// Config holds the top-level portwatch configuration.
+// Config holds all portwatch configuration.
 type Config struct {
-	Hosts   []HostConfig  `json:"hosts"`
-	Interval time.Duration `json:"-"`
-	// IntervalSeconds is used for JSON marshaling.
-	IntervalSeconds int    `json:"interval_seconds"`
-	StorePath       string `json:"store_path"`
-}
-
-// HostConfig describes a single host and the ports to scan.
-type HostConfig struct {
-	Address   string `json:"address"`
-	PortRange string `json:"port_range"`
-	Label     string `json:"label,omitempty"`
-}
-
-// Load reads a JSON config file from the given path.
-func Load(path string) (*Config, error) {
-	f, err := os.Open(path)
-	if err != nil {
-		return nil, err
-	}
-	defer f.Close()
-
-	var cfg Config
-	if err := json.NewDecoder(f).Decode(&cfg); err != nil {
-		return nil, err
-	}
-
-	if cfg.IntervalSeconds <= 0 {
-		cfg.IntervalSeconds = 60
-	}
-	cfg.Interval = time.Duration(cfg.IntervalSeconds) * time.Second
-
-	if cfg.StorePath == "" {
-		cfg.StorePath = "portwatch.db"
-	}
-
-	return &cfg, nil
+	Hosts    []string      `yaml:"hosts"`
+	Ports    string        `yaml:"ports"`
+	Interval time.Duration `yaml:"interval"`
+	StorePath string       `yaml:"store_path"`
+	Timeout  time.Duration `yaml:"timeout"`
 }
 
 // Default returns a Config populated with sensible defaults.
-func Default() *Config {
-	return &Config{
-		Hosts:           []HostConfig{},
-		IntervalSeconds: 60,
-		Interval:        60 * time.Second,
-		StorePath:       "portwatch.db",
+func Default() Config {
+	return Config{
+		Hosts:     []string{"127.0.0.1"},
+		Ports:     "1-1024",
+		Interval:  60 * time.Second,
+		StorePath: "/tmp/portwatch_state.json",
+		Timeout:   500 * time.Millisecond,
 	}
+}
+
+// Load reads a YAML config file, falling back to defaults for missing fields.
+func Load(path string) (Config, error) {
+	cfg := Default()
+	data, err := os.ReadFile(path)
+	if os.IsNotExist(err) {
+		return cfg, nil
+	}
+	if err != nil {
+		return cfg, err
+	}
+	if err := yaml.Unmarshal(data, &cfg); err != nil {
+		return cfg, err
+	}
+	if cfg.Interval == 0 {
+		cfg.Interval = Default().Interval
+	}
+	if cfg.Timeout == 0 {
+		cfg.Timeout = Default().Timeout
+	}
+	if cfg.StorePath == "" {
+		cfg.StorePath = Default().StorePath
+	}
+	return cfg, nil
 }
