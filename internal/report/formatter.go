@@ -15,3 +15,9 @@ type Summary struct {
 	NewPorts    []int
 	ClosedPorts []int
 }
+
+// HasChanges reports whether the summary contains any port changes,
+// i.e. ports that were newly opened or recently closed.
+func (s Summary) HasChanges() bool {
+	return len(s.NewPorts) > 0 || len(s.ClosedPorts) > 0
+}
