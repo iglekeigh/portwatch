@@ -35,6 +35,16 @@ func TestBuildEvent_NoChanges(t *testing.T) {
 	}
 }
 
+// TestBuildEvent_BothNewAndClosed verifies that when both new and closed ports
+// are present, the event is assigned the higher severity level (ALERT).
+func TestBuildEvent_BothNewAndClosed(t *testing.T) {
+	d := scanner.Diff{NewPorts: []int{8080}, ClosedPorts: []int{22}}
+	e := BuildEvent("host", d)
+	if e.Level != LevelAlert {
+		t.Errorf("expected ALERT when both new and closed ports present, got %s", e.Level)
+	}
+}
+
 func TestConsoleNotifier_Notify(t *testing.T) {
 	var buf bytes.Buffer
 	n := &ConsoleNotifier{Out: &buf}
