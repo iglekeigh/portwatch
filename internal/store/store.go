@@ -60,6 +60,17 @@ func (s *Store) Delete(host string) (bool, error) {
 	return true, s.flush()
 }
 
+// Hosts returns a slice of all host names currently in the store.
+func (s *Store) Hosts() []string {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	hosts := make([]string, 0, len(s.data))
+	for h := range s.data {
+		hosts = append(hosts, h)
+	}
+	return hosts
+}
+
 func (s *Store) load() error {
 	f, err := os.Open(s.path)
 	if err != nil {
