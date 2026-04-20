@@ -48,6 +48,18 @@ func (s *Store) Save(snap Snapshot) error {
 	return s.flush()
 }
 
+// Delete removes the snapshot for a host and flushes to disk.
+// It returns false (without error) if the host was not present.
+func (s *Store) Delete(host string) (bool, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if _, ok := s.data[host]; !ok {
+		return false, nil
+	}
+	delete(s.data, host)
+	return true, s.flush()
+}
+
 func (s *Store) load() error {
 	f, err := os.Open(s.path)
 	if err != nil {
