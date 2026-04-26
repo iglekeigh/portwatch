@@ -44,3 +44,11 @@ func ParsePortRange(expr string) ([]int, error) {
 	}
 	return ports, nil
 }
+
+// ValidatePort checks whether p is a valid TCP/UDP port number (1–65535).
+func ValidatePort(p int) error {
+	if p < 1 || p > 65535 {
+		return fmt.Errorf("port %d out of valid range (1-65535)", p)
+	}
+	return nil
+}
